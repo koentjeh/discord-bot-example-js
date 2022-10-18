@@ -1,0 +1,62 @@
+{
+    "ping": {
+      "name": "ping",
+        "description": "Pong!",
+        "usage": "ping",
+        "aliases": [
+          "pong"
+        ],
+        "cooldown": 5,
+        "category": "info",
+        "permissions": [
+          "SEND_MESSAGES"
+        ],
+        "run": "async (client, message, args) => {\n    const msg = await message.channel.send(`Pinging...`);\n\n    msg.edit(`Pong! Latency is ${Math.floor(msg.createdTimestamp - message.createdTimestamp)}ms. API Latency is ${Math.round(client.ws.ping)}ms`);\n}"
+    },
+
+    "say": {
+      "name": "say",
+        "description": "Make the bot say something",
+        "usage": "say <text>",
+        "aliases": [
+          "repeat"
+        ],
+        "cooldown": 5,
+        "category": "info",
+        "permissions": [
+          "SEND_MESSAGES"
+        ],
+        "run": "async (client, message, args) => {\n    if (!args[0]) return message.channel.send(`Please provide a text`);\n\n    message.channel.send(args.join(` `));\n}"
+    },
+
+    "help" : {
+      "name": "help",
+        "description": "Shows all available commands",
+        "usage": "help [command]",
+        "aliases": [
+          "commands"
+        ],
+        "cooldown": 5,
+        "category": "info",
+        "permissions": [
+          "SEND_MESSAGES"
+        ],
+        "run": "async (client, message, args) => {\n    if (args[0]) {\n        return getCMD(client, message, args[0]);\n    } else {\n        return getAll(client, message);\n    }\n}"
+    },
+
+    "add" : {
+        "name": "add",
+        "description": "Add a command",
+        "usage": "add <name> <description> <usage> <aliases> <cooldown> <category> <permissions> <run>",
+        "aliases": [
+          "addcommand"
+        ],
+        "cooldown": 5,
+        "category": "owner",
+        "permissions": [
+          "SEND_MESSAGES"
+        ],
+
+        "run": "async (client, message, args) => {\n    if (message.author.id !== 'YOUR ID') return;\n\n    const name = args[0];\n    const description = args[1];\n    const usage = args[2];\n    const aliases = args[3].split(',');\n    const cooldown = args[4];\n    const category = args[5];\n    const permissions = args[6].split(',');\n    const run = args[7];\n\n    client.commands.set(name, {\n        name: name,\n        description: description,\n        usage: usage,\n        aliases: aliases,\n        cooldown: cooldown,\n        category: category,\n        permissions: permissions,\n        run: run\n    });\n\n    message.channel.send(`Command added!`);\n}"
+    }
+  }
