@@ -85,6 +85,93 @@ client.on('interactionCreate', async interaction => {
 
     }
 
+    else if (interaction.commandName === 'control') {
+        //make embed with buttons for the user to control the bot
+        const { MessageActionRow, ButtonBuilder, EmbedBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
+        const config = require('./botconfig/embed.json');
+        const embed = new EmbedBuilder()
+            .setTitle('Control Panel')
+            .setDescription('Use the buttons below to control the bot')
+            .setColor(config.color)
+            .setTimestamp();
+
+            const row = new ActionRowBuilder()
+			.addComponents(
+				new ButtonBuilder()
+					.setCustomId('primary')
+					.setLabel('Blink')
+					.setStyle(ButtonStyle.Primary),
+
+                new ButtonBuilder()
+                    .setCustomId('secondary')
+                    .setLabel('Turn on (constant)')
+                    .setStyle(ButtonStyle.Success),
+
+                new ButtonBuilder()
+                    .setCustomId('tertiary')
+                    .setLabel('Turn off')
+                    .setStyle(ButtonStyle.Danger),
+			);
+
+		await interaction.reply({ content: 'Control LED of Pico W,', components: [row] });
+
+        const filter = i => i.customId === 'primary' || i.customId === 'secondary' || i.customId === 'tertiary';
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 15000 });
+        //a webserver is hosted on Raspberry Pico W with a small python script that controls the Onboard LED, this command can send a request to the local webserver to turn the LED on, off or blink
+        
+        collector.on('collect', async i => {
+            if (i.customId === 'primary') {
+                await i.update({ content: 'Blinking!', components: [] });
+                //send a link to the pico w to blink
+                const { exec } = require('child_process');
+                exec('curl -X POST http://192.168.178.59/"?led=blink\"', (err, stdout, stderr) => {
+                    if (err) {
+                        console.log(err);
+                        console.log('BLINK');
+                    }
+                    //console.log(stdout);
+
+                    //close the collector
+                    collector.stop();
+                });
+            }
+
+            else if (i.customId === 'secondary') {
+                await i.update({ content: 'On!', components: [] });
+                //send a link to the pico w to turn on
+                const { exec } = require('child_process');
+                exec('curl -X POST http://192.168.178.59/"?led=on\"', (err, stdout, stderr) => {
+                    if (err) {
+                        console.log(err);
+                        console.log('ON');
+                    }
+                    //console.log(stdout);
+
+                    //close the collector
+                    collector.stop();
+                });
+            }
+
+            else if (i.customId === 'tertiary') {
+                await i.update({ content: 'Off!', components: [] });
+                //send a link to the pico w to turn off
+                const { exec } = require('child_process');
+                exec('curl -X POST http://192.168.178.59/"?led=off\"', (err, stdout, stderr) => {
+                    if (err) {
+                        console.log(err);
+                        console.log('OFF');
+                    }
+                    //console.log(stdout);
+
+                    //close the collector
+                    collector.stop();
+                }
+                );
+            }
+        });
+
+    }
+
     //when someone uses a command, log it in the console and log which command they used
     console.log(`${interaction.user.tag} in #${interaction.channel.name} triggered ${command}`);
     //log the command in a file and if it already exists, add 1 to the count and log who used it
