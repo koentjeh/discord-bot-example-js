@@ -46,7 +46,7 @@
 
     "control": {
       "name": "control",
-        "description": "Control the bot",
+        "description": "Control the LED",
         "usage": "control <command>",
         "aliases": [
           "bot"
