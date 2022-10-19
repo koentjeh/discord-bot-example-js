@@ -10,8 +10,7 @@
         "category": "info",
         "permissions": [
           "SEND_MESSAGES"
-        ],
-        "run": "async (client, message, args) => {\n    const msg = await message.channel.send(`Pinging...`);\n\n    msg.edit(`Pong! Latency is ${Math.floor(msg.createdTimestamp - message.createdTimestamp)}ms. API Latency is ${Math.round(client.ws.ping)}ms`);\n}"
+        ]
     },
 
     "say": {
@@ -25,8 +24,7 @@
         "category": "info",
         "permissions": [
           "SEND_MESSAGES"
-        ],
-        "run": "async (client, message, args) => {\n    if (!args[0]) return message.channel.send(`Please provide a text`);\n\n    message.channel.send(args.join(` `));\n}"
+        ]
     },
 
     "help" : {
@@ -40,8 +38,7 @@
         "category": "info",
         "permissions": [
           "SEND_MESSAGES"
-        ],
-        "run": "async (client, message, args) => {\n    if (args[0]) {\n        return getCMD(client, message, args[0]);\n    } else {\n        return getAll(client, message);\n    }\n}"
+        ]
     },
 
     "control": {
@@ -55,7 +52,6 @@
         "category": "info",
         "permissions": [
           "SEND_MESSAGES"
-        ],
-        "run": "async (client, message, args) => {\n    if (!args[0]) return message.channel.send(`Please provide a command`);\n\n    if (args[0] === `reload`) {\n        client.commands.forEach(async cmd => {\n            await client.unloadCommand(cmd.help.name);\n            client.loadCommand(cmd.help.name);\n        });\n\n        return message.channel.send(`Reloaded all commands!`);\n    }\n}"
+        ]
     }
   }

@@ -180,14 +180,12 @@ client.on('interactionCreate', async interaction => {
         let commands = JSON.parse(data);
         if (commands[interaction.commandName]) {
             commands[interaction.commandName].count++;
-            if (commands[interaction.commandName].users.includes(interaction.user.id)) return;
-            commands[interaction.commandName].users.push(interaction.user.id);
-        } else {
-            commands[interaction.commandName] = {
-                count: 1,
-                users: [interaction.user.tag]
-            };
+            //if the user is already in the list, don't add them again
+            if (!commands[interaction.commandName].users.includes(interaction.user.id)) {
+                commands[interaction.commandName].users.push(interaction.user.id);
+            }
         }
+
         fs.writeFile('./log.json', JSON.stringify(commands, null, 2), err => {
             if (err) throw err;
         });
