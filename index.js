@@ -91,7 +91,7 @@ client.on('interactionCreate', async interaction => {
         const config = require('./botconfig/embed.json');
         const embed = new EmbedBuilder()
             .setTitle('Control Panel')
-            .setDescription('Use the buttons below to control the bot')
+            .setDescription('Use the buttons below to control the LED')
             .setColor(config.color)
             .setTimestamp();
 
