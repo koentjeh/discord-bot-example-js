@@ -1,57 +1,55 @@
 {
-    "ping": {
-      "name": "ping",
-        "description": "Pong!",
-        "usage": "ping",
-        "aliases": [
-          "pong"
-        ],
-        "cooldown": 5,
-        "category": "info",
-        "permissions": [
-          "SEND_MESSAGES"
-        ]
-    },
+  "help" : {
+    "name": "help",
+      "description": "Shows all available commands",
+      "aliases": [
+        "h",
+        "commands"
+      ],
+      "cooldown": 5,
+      "category": "info",
+      "permissions": [
+        "SEND_MESSAGES"
+      ]
+  },
 
-    "say": {
-      "name": "say",
-        "description": "Make the bot say something",
-        "usage": "say <text>",
-        "aliases": [
-          "repeat"
-        ],
-        "cooldown": 5,
-        "category": "info",
-        "permissions": [
-          "SEND_MESSAGES"
-        ]
-    },
+  "list" : {
+    "name": "list",
+      "description": "Shows all emotes",
+      "aliases": [
+        "li",
+        "emotes"
+      ],
+      "cooldown": 5,
+      "category": "info",
+      "permissions": [
+        "SEND_MESSAGES"
+      ]
+  },
 
-    "help" : {
-      "name": "help",
-        "description": "Shows all available commands",
-        "usage": "help [command]",
-        "aliases": [
-          "commands"
-        ],
-        "cooldown": 5,
-        "category": "info",
-        "permissions": [
-          "SEND_MESSAGES"
-        ]
-    },
-
-    "control": {
-      "name": "control",
-        "description": "Control the LED",
-        "usage": "control <command>",
-        "aliases": [
-          "bot"
-        ],
-        "cooldown": 5,
-        "category": "info",
-        "permissions": [
-          "SEND_MESSAGES"
-        ]
-    }
+  "control": {
+    "name": "control",
+      "description": "Control the LED",
+      "aliases": [
+        "c"
+      ],
+      "cooldown": 5,
+      "category": "control",
+      "permissions": [
+        "SEND_MESSAGES"
+      ]
+  },
+  
+  "ping": {
+    "name": "ping",
+      "description": "Pong!",
+      "aliases": [
+        "ping"
+      ],
+      "cooldown": 5,
+      "category": "info",
+      "permissions": [
+        "SEND_MESSAGES"
+      ]
   }
+}
