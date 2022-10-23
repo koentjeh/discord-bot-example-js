@@ -1,5 +1,5 @@
-.env 
+.idea
+.env
 node_modules 
 log.json
 logCommands.json
-log.json

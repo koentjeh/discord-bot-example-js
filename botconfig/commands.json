@@ -1,16 +1,16 @@
 {
   "help" : {
-    "name": "help",
-      "description": "Shows all available commands",
-      "aliases": [
-        "h",
-        "commands"
-      ],
-      "cooldown": 5,
-      "category": "info",
-      "permissions": [
-        "SEND_MESSAGES"
-      ]
+    "name": "HELP MENU \uD83D\uDD30 Commands",
+    "description": "Shows all available commands",
+    "aliases": [
+      "h",
+      "commands"
+    ],
+    "cooldown": 5,
+    "category": "info",
+    "permissions": [
+      "SEND_MESSAGES"
+    ]
   },
 
   "list" : {

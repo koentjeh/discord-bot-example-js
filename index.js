@@ -1,57 +1,41 @@
-//make a simple discord bot that responds to ping with pong
-const { Client, Discord, REST, Routes, GatewayIntentBits, ApplicationCommand, MessageActionRow, ButtonBuilder, EmbedBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
+const { Client, Events, GatewayIntentBits, ButtonBuilder, EmbedBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
+const { exec } = require('child_process');
+const fs = require("fs");
+const reactions = require('./reactions.json');
+
 //get token from .env file (make sure to add .env to .gitignore)
 require('dotenv').config();
 
-var mysql = require('mysql');
-
-var con = mysql.createConnection({
+// Use this repositories Database class.
+const { Database } = require('database/database');
+// store in variable so we can use the Class functions.
+const database = new Database({
     host: "localhost",
     user: "root",
     password: ""
 });
 
+// Use this repositories Logger class.
+const { Logger } = require('logging/logger');
+// store in variable so we can use the Class functions.
+const logger = new Logger('log.txt');
 
-const token = process.env.TOKEN;
-
-const { exec } = require('child_process');
-
-//get the ip from the .env file and put it in a variable. This is the ip of the server that the bot can connect to and send GET requests to (Ex: turn on a light with http://(ip)/"?led=on\")
-const ip = process.env.IP;
-
-const fs = require("fs"); //this package is for reading files and getting their inputs
+// Use the Discord.js Client so we can access the class functions.
 const client = new Client({
-    intents:
-        [
-            GatewayIntentBits.Guilds,
-            GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent,
-            GatewayIntentBits.GuildMembers,
-            GatewayIntentBits.GuildPresences
-        ]
-},
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences
+    ],
+    partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+});
 
-    {
-        messageCacheLifetime: 60,
-        fetchAllMembers: false,
-        messageCacheMaxSize: 10,
-        restTimeOffset: 0,
-        restWsBridgetimeout: 100,
-        disableEveryone: true,
-        partials: ['MESSAGE', 'CHANNEL', 'REACTION']
-    }
-);
 
-//make a function to log something to the console and to a file
-function log(message) {
-    console.log(message);
-    //put the message in a file called log.txt and add the date and time to the message and leave 2 lines between each message
-    fs.appendFile('log.txt', `${new Date().toLocaleString()} - ${message}\n\n`, function (err) {
-        if (err) {
-            return console.log(err);
-        }
-    });
-}
+// Define database configuration once
+// const connection = database.connect();
+
 
 //make a function to show the error in an embed
 function error(message) {
@@ -62,10 +46,6 @@ function error(message) {
         .setTimestamp()
     return embed;
 }
-
-
-const reactions = require('./reactions.json');
-
 
 client.on('ready', () => {
     //send an embed message to the channel that the bot is online and change the message to say "Loading..." after 5 seconds
@@ -106,11 +86,7 @@ client.on('ready', () => {
     // .catch(console.error);
 
     //clear log.txt file to avoid having a huge file
-    fs.writeFile("log.txt", "", function (err) {
-        if (err) {
-            return console.log(err);
-        }
-    });
+    logger.log(''); // I doubt this Copilot clears the log file.
 
 
     //show the bot is ready in the console using ready.js
@@ -193,7 +169,7 @@ client.on('interactionCreate', async interaction => {
         const embed = new EmbedBuilder()
             .setTitle('Control Panel')
             .setDescription('Use the buttons below to control the LED')
-            .setColor(config.color)
+            // .setColor(config.color)
             .setTimestamp();
 
         const row = new ActionRowBuilder()
@@ -315,37 +291,76 @@ client.on('interactionCreate', async interaction => {
 
 // Path: commands/ping.js
 
-
 client.on('messageCreate', message => {
+    // if a bot creates a message exit current function.
+    // this is important to prevent infinite loops when message.send() is executed.
     if (message.author.bot) {
-        if (message.content.includes('Pong')) {
-            message.react('🏓');
-        }
+        // exit the current function and do nothing
+        return;
+        // this method is executed when a message is created.
+        // if a bot creates a message after a message is created this method will be executed again,
+        // therefore causing an infinite loop.
     }
-    else {
-        //make an array of all the words in the message and make them lowercase
-        const words = message.content.toLowerCase().split(' ');
-        //log words
-        log(words);
-        //if the message contains a space, put all words in an array and check each word for a reaction emoji in the reactions.json file and add it to the message
-        if (message.content.includes(' ')) {
-            for (const word of words) {
-                for (const [emoji, words] of Object.entries(reactions)) {
-                    if (words.some(word => message.content.match(word))) {
-                        message.react(emoji);
-                    }
-                }
-            }
-        } else {
-            //if the message doesn't contain a space, check if the message contains a reaction emoji in the reactions.json file and add it to the message
-            for (const [emoji, words] of Object.entries(reactions)) {
-                if (words.some(word => message.content.includes(word))) {
-                    message.react(emoji);
-                }
-            }
+
+    // Does exactly what function names say.
+    const messageContent = message.content
+        .toLowerCase()
+        .removeWhitespaceCharacters();
+
+    // play ping pong with bot.
+    if (respondTo(message.content, 'pong')) {
+        message.react('🏓');
+    }
+
+    // let bot react to with emoji's to certain words in reactions.json.
+    for (const [emoji, words] of Object.entries(reactions)) {
+        if (respondsTo(messageContent, words)) {
+            message.react(emoji);
         }
     }
 });
 
-//get token from .env file
-client.login(token);
+/**
+ * Adds removeWhitespaceCharacters() function to String which removes all whitespace characters.
+ * - space character
+ * - tab character
+ * - carriage return character
+ * - new line character
+ * - vertical tab character
+ * - form feed character
+ * @returns {string}
+ */
+String.prototype.removeWhitespaceCharacters = () => {
+    return this.replace(/\s+/g, '');
+}
+
+/**
+ * Check if message contains one word from a list of words.
+ * @param {string} message - contents of a message
+ * @param {array} triggers - list of words that should be in the message
+ * @returns {boolean}
+ */
+function respondsTo(message, triggers) {
+    return message.some(word => triggers.includes(word));
+}
+
+/**
+ * Check if message contains word.
+ * @param {string} message - contents of a message
+ * @param {string} trigger - word that should be in the message
+ * @returns {boolean}
+ */
+function respondTo(message, trigger) {
+    return message.content.includes(trigger);
+}
+/**
+ * Same as respondTo(..) but prevents double code by converting single word to array and re-using respondsTo(..)
+ * @param {string} message - contents of a message
+ * @param {string} trigger - word that should be in the message
+ * @returns {boolean}
+ */
+// function respondTo(message, trigger) {
+//     return respondsTo(message, [trigger]);
+// }
+
+client.login(process.env.TOKEN);
