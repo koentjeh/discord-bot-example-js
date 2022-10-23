@@ -1,11 +1,21 @@
 //make a simple discord bot that responds to ping with pong
-const { Client, Discord, REST, Routes, GatewayIntentBits, ApplicationCommand,  MessageActionRow, ButtonBuilder, EmbedBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
+const { Client, Discord, REST, Routes, GatewayIntentBits, ApplicationCommand, MessageActionRow, ButtonBuilder, EmbedBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
 //get token from .env file (make sure to add .env to .gitignore)
 require('dotenv').config();
 
+var mysql = require('mysql');
+
+var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: ""
+});
+
+
 const token = process.env.TOKEN;
-const rest = new REST({ version: '10' }).setToken(token);
-const clientId = process.env.CLIENT_ID;
+
+const { exec } = require('child_process');
+
 //get the ip from the .env file and put it in a variable. This is the ip of the server that the bot can connect to and send GET requests to (Ex: turn on a light with http://(ip)/"?led=on\")
 const ip = process.env.IP;
 
@@ -32,20 +42,77 @@ const client = new Client({
     }
 );
 
+//make a function to log something to the console and to a file
+function log(message) {
+    console.log(message);
+    //put the message in a file called log.txt and add the date and time to the message and leave 2 lines between each message
+    fs.appendFile('log.txt', `${new Date().toLocaleString()} - ${message}\n\n`, function (err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+}
+
+//make a function to show the error in an embed
+function error(message) {
+    const embed = new EmbedBuilder()
+        .setTitle("Error")
+        .setDescription(message)
+        .setColor(0xff0000)
+        .setTimestamp()
+    return embed;
+}
+
+
 const reactions = require('./reactions.json');
 
 
 client.on('ready', () => {
+    //send an embed message to the channel that the bot is online and change the message to say "Loading..." after 5 seconds
+    const embed = new EmbedBuilder()
+        .setTitle("Bot Online")
+        .setDescription("The bot is online!")
+        .setColor(0x00ff00)
+        .setTimestamp()
+    client.channels.cache.get("1033726233684492391").send({ embeds: [embed] }).then(msg => {
+        //change the description of the message to "Loading..." after 5 seconds
+        setTimeout(() => {
+            msg.edit({ embeds: [embed.setDescription("Loading...")] });
+            setTimeout(() => {
+                //connect to the database
+                con.connect(function (err) {
+                    if (err){
+                        log(err);
+                        msg.edit({ embeds: [error("Error connecting to the database.")] });
+                        //change the color of the embed to red
+                        embed.setColor(0xff0000);
+                    } else{
+                    //change the description of the message to "Connected to database" after 5 seconds
+                    msg.edit({ embeds: [embed.setDescription("Connected to database")] });
+                    }
+                }, 1000);
+            });
+        }, 1000);
+
+
+    });
     client.application.commands.cache.clear();
-    
+
     //remove slash commands from the bot to avoid keeping old commands
     //comment this out after running it once and restart discord client to see effect.
 
     // rest.put(Routes.applicationCommands(clientId), { body: [] })
-	// .then(() => console.log('Successfully deleted all application commands.'))
-	// .catch(console.error);
+    // .then(() => console.log('Successfully deleted all application commands.'))
+    // .catch(console.error);
 
-    
+    //clear log.txt file to avoid having a huge file
+    fs.writeFile("log.txt", "", function (err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+
+
     //show the bot is ready in the console using ready.js
     require('./events/ready.js')(client);
 
@@ -54,6 +121,9 @@ client.on('ready', () => {
     //add a slash command for each command in commands.json and add it to the bot
     fs.readFile('./botconfig/commands.json', (err, data) => {
         if (err) throw err;
+        if (err) {
+            log(err);
+        }
         let commands = JSON.parse(data);
         Object.keys(commands).forEach(command => {
             client.application.commands.create(new SlashCommandBuilder()
@@ -75,6 +145,21 @@ client.on('interactionCreate', async interaction => {
         //reply with the amount of ping
         await interaction.reply(`Pong! ${client.ws.ping}ms`);
         console.log(`Pong! ${client.ws.ping}ms`);
+        exec(`curl -X POST ${ip}"?led=on\"`, (err, stdout, stderr) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            //return the light to its original state after 2 seconds
+            setTimeout(() => {
+                exec(`curl -X POST ${ip}"?led=off\"`, (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                });
+            }, 1000);
+        });
     }
 
     else if (interaction.commandName === 'list') {
@@ -139,12 +224,17 @@ client.on('interactionCreate', async interaction => {
             if (i.customId === 'primary') {
                 await i.update({ content: 'Blinking!', components: [] });
                 //send a link to the pico w to blink
-                const { exec } = require('child_process');
                 //get the ip address of the pico w from the .env file
                 exec(`curl -X POST ${ip}"?led=blink\"`, (err, stdout, stderr) => {
                     if (err) {
-                        console.log(err);
-                        console.log('BLINK');
+                        const blinkErr = "BLINK ERROR. Could not send request to Pico W";
+                        log(err);
+                        log(blinkErr);
+                        //get embed from error function
+                        const embed = error(blinkErr);
+                        //send embed to channel
+                        i.channel.send({ embeds: [embed] });
+
                     }
                     //console.log(stdout);
 
@@ -159,8 +249,11 @@ client.on('interactionCreate', async interaction => {
                 const { exec } = require('child_process');
                 exec(`curl -X POST ${ip}"?led=on\"`, (err, stdout, stderr) => {
                     if (err) {
-                        console.log(err);
-                        console.log('ON');
+                        const onErr = "ON ERROR. Could not send request to Pico W";
+                        log(err);
+                        log(onErr);
+                        const embed = error(onErr);
+                        i.channel.send({ embeds: [embed] });
                     }
                     //console.log(stdout);
 
@@ -175,8 +268,11 @@ client.on('interactionCreate', async interaction => {
                 const { exec } = require('child_process');
                 exec(`curl -X POST ${ip}"?led=off\"`, (err, stdout, stderr) => {
                     if (err) {
-                        console.log(err);
-                        console.log('OFF');
+                        const offErr = "OFF ERROR. Could not send request to Pico W";
+                        log(err);
+                        log(offErr);
+                        const embed = error(offErr);
+                        i.channel.send({ embeds: [embed] });
                     }
                     //console.log(stdout);
 
@@ -194,6 +290,9 @@ client.on('interactionCreate', async interaction => {
     //log the command in a file and if it already exists, add 1 to the count and log who used it
     fs.readFile('./log.json', (err, data) => {
         if (err) throw err;
+        if (err) {
+            log(err);
+        }
         let commands = JSON.parse(data);
         if (commands[interaction.commandName]) {
             commands[interaction.commandName].count++;
@@ -205,6 +304,11 @@ client.on('interactionCreate', async interaction => {
 
         fs.writeFile('./log.json', JSON.stringify(commands, null, 2), err => {
             if (err) throw err;
+            if (err) {
+                log(err);
+                //send message in the channel that there was an error writing to the log file
+                interaction.channel.send('Error. Could not write to log file');
+            }
         });
     });
 });
@@ -221,11 +325,13 @@ client.on('messageCreate', message => {
     else {
         //make an array of all the words in the message and make them lowercase
         const words = message.content.toLowerCase().split(' ');
+        //log words
+        log(words);
         //if the message contains a space, put all words in an array and check each word for a reaction emoji in the reactions.json file and add it to the message
         if (message.content.includes(' ')) {
             for (const word of words) {
                 for (const [emoji, words] of Object.entries(reactions)) {
-                    if (words.some(word => message.content.includes(word))) {
+                    if (words.some(word => message.content.match(word))) {
                         message.react(emoji);
                     }
                 }
