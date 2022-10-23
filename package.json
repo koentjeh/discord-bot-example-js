@@ -4,14 +4,20 @@
   "description": "Node.js bot for Discord",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.6.0"
+    "@discordjs/voice": "^0.13.0",
+    "discord.js": "^14.6.0",
+    "dotenv": "^16.0.3",
+    "open": "^8.4.0",
+    "puppeteer": "^19.1.0"
   },
   "devDependencies": {
-    "eslint": "^8.26.0"
+    "nodemon": "^2.0.20"
   }
 }
